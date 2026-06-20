@@ -1,5 +1,8 @@
-const API_BASE = '/api/admin';
 const TOKEN_KEY = 'admin_token';
+
+// Call Express directly in dev to avoid Vite proxy issues with /api/admin paths
+const API_ROOT = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:5000' : '');
+const API_BASE = `${API_ROOT}/api/admin`;
 
 function getToken() {
   return localStorage.getItem(TOKEN_KEY);
@@ -7,17 +10,22 @@ function getToken() {
 
 async function parseJsonResponse(res) {
   const text = await res.text();
+
   if (!text) {
     throw new Error(
       res.ok
         ? 'Server returned an empty response.'
-        : `API unavailable (${res.status}). Ensure the backend is running.`
+        : `API unavailable (${res.status}). Ensure the backend is running on port 5000.`
     );
   }
+
   try {
     return JSON.parse(text);
   } catch {
-    throw new Error(`Server returned invalid JSON (${res.status}).`);
+    const preview = text.replace(/\s+/g, ' ').slice(0, 80);
+    throw new Error(
+      `Admin API error (${res.status}). Backend may be outdated — restart with "npm run dev". Response: ${preview}`
+    );
   }
 }
 
