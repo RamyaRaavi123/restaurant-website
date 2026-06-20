@@ -5,7 +5,8 @@ import mongoose from 'mongoose';
 import menuRoutes from './routes/menu.js';
 import reservationRoutes from './routes/reservations.js';
 import contactRoutes from './routes/contact.js';
-import adminRoutes from './routes/admin.js';
+import adminRoutes, { adminLoginHandler } from './routes/admin.js';
+import { requireAuth } from './middleware/auth.js';
 import { connectDb, printMongoHelp } from './db/connect.js';
 
 dotenv.config();
@@ -56,14 +57,27 @@ app.get('/api/health', (_req, res) => {
 app.get('/api', (_req, res) => {
   res.json({
     message: 'Savory Haven API',
-    routes: ['/api/health', '/api/menu', '/api/reservations', '/api/contact'],
+    routes: [
+      '/api/health',
+      '/api/menu',
+      '/api/reservations',
+      '/api/contact',
+      '/api/admin/login',
+      '/api/admin/stats',
+    ],
   });
 });
+
+app.get('/api/admin/ping', (_req, res) => {
+  res.json({ status: 'ok', message: 'Admin API is available' });
+});
+
+app.post('/api/admin/login', adminLoginHandler);
 
 app.use('/api/menu', requireDb, menuRoutes);
 app.use('/api/reservations', requireDb, reservationRoutes);
 app.use('/api/contact', requireDb, contactRoutes);
-app.use('/api/admin', requireDb, adminRoutes);
+app.use('/api/admin', requireDb, requireAuth, adminRoutes);
 
 app.use((_req, res) => {
   res.status(404).json({
